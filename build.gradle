@@ -1,0 +1,4 @@
+// Tep cau hinh goc cua du an
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}

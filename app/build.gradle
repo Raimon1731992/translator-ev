@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.skymavis.translatorev'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.skymavis.translatorev"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+            // Ky bang khoa debug de file .apk cai duoc ngay, khong can tao keystore.
+            // Neu muon dua len CH Play thi phai thay bang khoa ky rieng.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Ung dung khong dung thu vien ngoai nao - chi dung API san co cua Android.
+dependencies { }

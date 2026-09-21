@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0e1116">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>TranslatorEV — Thông dịch Anh ⇄ Việt</title>
+<style>
+  :root{
+    --bg:#0e1116; --surface:#161b23; --s2:#1d242e; --s3:#252e3a; --border:#2b3542;
+    --text:#e6edf3; --dim:#9aa7b8; --faint:#6b7889;
+    --accent:#3b82f6; --en:#f59e0b; --vi:#10b981; --rec:#e11d48; --warn:#eab308;
+    --safeT:env(safe-area-inset-top,0px); --safeB:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overscroll-behavior:none}
+  body{
+    background:var(--bg);color:var(--text);display:flex;flex-direction:column;
+    font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  }
+  button,select,textarea,input{font-family:inherit;font-size:inherit}
+
+  header{
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:calc(10px + var(--safeT)) 14px 10px;display:flex;align-items:center;gap:10px;
+  }
+  header .lg{font-size:20px;color:var(--accent)}
+  header b{font-size:16px;display:block;line-height:1.2}
+  header small{font-size:11px;color:var(--faint)}
+  header .sp{flex:1}
+  #engine{background:var(--s3);color:var(--text);border:0;border-radius:8px;padding:7px 8px;font-size:12px}
+
+  main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 16px}
+  .tab{display:none}.tab.on{display:block}
+
+  .note{background:#3a2a06;border:1px solid #6b5210;color:#f5d98b;border-radius:10px;
+        padding:10px 12px;font-size:13px;margin-bottom:12px;display:none;line-height:1.45}
+  .note.on{display:block}
+
+  .langbar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .pill{flex:1;border:0;border-radius:11px;padding:13px 8px;font-size:14px;font-weight:700;
+        background:var(--s3);color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill.en{background:var(--en);color:#1a1102}
+  .pill.vi{background:var(--vi);color:#04150d}
+  .swap{border:0;border-radius:11px;background:var(--accent);color:#fff;padding:13px 15px;font-size:17px;flex:0 0 auto}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden}
+  .card h3{margin:0;padding:11px 14px 4px;font-size:10.5px;letter-spacing:.07em;
+           display:flex;justify-content:space-between;align-items:center;font-weight:700}
+  .card h3 em{font-style:normal;color:var(--faint);font-weight:400;font-size:10.5px}
+  textarea,.out{
+    display:block;width:calc(100% - 20px);margin:0 10px;background:var(--s2);color:var(--text);
+    border:0;border-radius:10px;padding:12px;font-size:17px;line-height:1.5;outline:none;
+    resize:none;min-height:104px;white-space:pre-wrap;word-break:break-word;overflow:auto;
+  }
+  .out{min-height:104px;font-size:19px}
+  .out:empty::before{content:attr(data-ph);color:var(--faint);font-size:16px}
+  .tools{display:flex;gap:7px;padding:10px;flex-wrap:wrap;align-items:center}
+  .btn{border:0;border-radius:10px;padding:11px 14px;font-size:13.5px;font-weight:600;
+       background:var(--s3);color:var(--dim)}
+  .btn:active{filter:brightness(1.35)}
+  .btn:disabled{opacity:.4}
+  .btn.mic{background:var(--rec);color:#fff}
+  .btn.live{background:var(--warn);color:#1a1400;animation:pulse 1s infinite}
+  .btn.say{background:var(--vi);color:#04150d}
+  @keyframes pulse{50%{opacity:.55}}
+  .cnt{margin-left:auto;font-size:11px;color:var(--faint)}
+  .go{width:100%;border:0;border-radius:13px;background:var(--accent);color:#fff;
+      padding:16px;font-size:17px;font-weight:700}
+  .go:disabled{opacity:.5}
+
+  /* hoi thoai */
+  #chat{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+        padding:12px;min-height:44vh}
+  .bub{max-width:88%;background:var(--s2);border:1px solid var(--border);border-radius:13px;
+       padding:10px 13px;margin:8px 0}
+  .bub.en{border-color:var(--en)}
+  .bub.vi{border-color:var(--vi);margin-left:auto}
+  .bub .tg{font-size:10px;font-weight:700;letter-spacing:.06em;display:flex;justify-content:space-between}
+  .bub.en .tg{color:var(--en)} .bub.vi .tg{color:var(--vi)}
+  .bub .o{font-size:13px;color:var(--faint);margin:4px 0 2px}
+  .bub .t{font-size:18px;font-weight:600;line-height:1.4}
+  .bub .sp{background:none;border:0;color:var(--dim);font-size:14px;padding:0 2px}
+  .big{width:100%;border:0;border-radius:14px;padding:20px;font-size:17px;font-weight:700;margin-top:10px}
+  .big.en{background:var(--en);color:#1a1102}
+  .big.vi{background:var(--vi);color:#04150d}
+  .big.live{background:var(--warn);color:#1a1400;animation:pulse 1s infinite}
+  .empty{text-align:center;color:var(--faint);padding:56px 10px}
+  .empty div:first-child{font-size:36px;opacity:.35}
+
+  /* lich su */
+  #q{width:100%;background:var(--s3);border:0;border-radius:11px;padding:13px;color:var(--text);
+     outline:none;margin-bottom:10px;font-size:15px}
+  .hrow{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:11px 13px;margin-bottom:8px}
+  .hrow .m{font-size:10.5px;color:var(--faint);display:flex;justify-content:space-between;margin-bottom:4px}
+  .hrow .s{font-size:13px;color:var(--dim)}
+  .hrow .r{font-size:15.5px;font-weight:600;margin-top:2px}
+  .hact{display:flex;gap:6px;margin-top:8px}
+  .hact button{flex:1;border:0;border-radius:8px;background:var(--s3);color:var(--dim);
+               padding:8px;font-size:12px;font-weight:600}
+  .row{display:flex;gap:7px;margin-bottom:10px}
+  .row .btn{flex:1;text-align:center}
+
+  nav{
+    display:flex;background:var(--surface);border-top:1px solid var(--border);
+    padding-bottom:var(--safeB);
+  }
+  nav button{
+    flex:1;background:none;border:0;color:var(--faint);padding:10px 4px 11px;
+    font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  nav button i{font-style:normal;font-size:19px;line-height:1}
+  nav button.on{color:var(--accent)}
+
+  #toast{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + var(--safeB));
+    background:#0b0f14ee;border:1px solid var(--border);color:var(--text);
+    padding:10px 16px;border-radius:22px;font-size:13.5px;max-width:86%;text-align:center;
+    opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+  }
+  #toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="lg">⇄</span>
+  <span><b>TranslatorEV</b><small id="mode">Anh ⇄ Việt</small></span>
+  <span class="sp"></span>
+  <select id="engine"><option value="mymemory">MyMemory</option><option value="google">Google</option></select>
+</header>
+
+<main>
+  <div id="warn" class="note"></div>
+
+  <!-- ============ DỊCH ============ -->
+  <section id="t1" class="tab on">
+    <div class="langbar">
+      <button id="src" class="pill">AUTO</button>
+      <button id="swap" class="swap">⇄</button>
+      <button id="tgt" class="pill vi">VI</button>
+    </div>
+
+    <div class="card">
+      <h3 style="color:var(--accent)">VĂN BẢN NGUỒN</h3>
+      <textarea id="in" placeholder="Gõ nội dung, hoặc bấm 🎤 Nói…"></textarea>
+      <div class="tools">
+        <button class="btn mic" id="mic">🎤 Nói</button>
+        <button class="btn" id="clear">Xoá</button>
+        <span class="cnt" id="cnt">0 ký tự</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="color:var(--vi)">BẢN DỊCH <em id="via"></em></h3>
+      <div class="out" id="out" data-ph="Bản dịch sẽ hiện ở đây…"></div>
+      <div class="tools">
+        <button class="btn say" id="say">🔊 Đọc to</button>
+        <button class="btn" id="shut">⏹</button>
+        <button class="btn" id="copy">Sao chép</button>
+      </div>
+    </div>
+
+    <button class="go" id="go">DỊCH</button>
+  </section>
+
+  <!-- ============ HỘI THOẠI ============ -->
+  <section id="t2" class="tab">
+    <p style="color:var(--faint);font-size:13px;margin:0 0 10px">
+      Bấm nút ngôn ngữ của người đang nói. Máy nghe → dịch → đọc lên.</p>
+    <div id="chat"><div class="empty"><div>🗣</div><div>Chưa có hội thoại nào</div></div></div>
+    <button class="big en" id="cEn">🎤  Speak English</button>
+    <button class="big vi" id="cVi">🎤  Nói tiếng Việt</button>
+    <p style="text-align:center;color:var(--dim);font-size:13px;min-height:20px" id="cSt"></p>
+    <button class="btn" id="cClr" style="width:100%">Xoá hội thoại</button>
+  </section>
+
+  <!-- ============ LỊCH SỬ ============ -->
+  <section id="t3" class="tab">
+    <input id="q" placeholder="🔍  Tìm trong lịch sử…">
+    <div class="row">
+      <button class="btn" id="expTxt">Xuất TXT</button>
+      <button class="btn" id="expCsv">Xuất CSV</button>
+      <button class="btn" id="clrH" style="color:#f87171">Xoá hết</button>
+    </div>
+    <div id="hlist"></div>
+  </section>
+</main>
+
+<nav>
+  <button class="on" data-tab="t1"><i>⇄</i>Dịch</button>
+  <button data-tab="t2"><i>🗣</i>Hội thoại</button>
+  <button data-tab="t3"><i>🕘</i>Lịch sử</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const AND = window.AndroidBridge || null;      // cầu nối app Android (nếu có)
+const FULL = {en:"English", vi:"Tiếng Việt", auto:"Tự nhận diện"};
+let S = {src:"auto", tgt:"vi", busy:false};
+
+/* ---------------------------------------------------------------- toast */
+let toastT;
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600);
+}
+
+/* ------------------------------------------------ nhận diện ngôn ngữ local */
+const VI_RE = /[ăâđêôơưàảãáạằẳẵắặầẩẫấậèẻẽéẹềểễếệìỉĩíịòỏõóọồổỗốộờởỡớợùủũúụừửữứựỳỷỹýỵ]/i;
+const VI_W = new Set("khong toi ban cua mot nguoi duoc nhung voi nay cho den the gi nao roi chua dang se minh chung rat qua cung hay lam biet muon thich can phai tren duoi trong ngoai nen boi tai hoac hoi xin cam on chao em anh chi co chu bac ong ba moi tu ve".split(" "));
+const EN_W = new Set("the and you that was for are with his they this have from one had but what were when your can said there use each which she how their will other about out many then them these would into has more her two like him see time could people than been its who now hello please thanks thank good morning yes help".split(" "));
+function detect(t){
+  t = (t||"").trim().toLowerCase(); if(!t) return "en";
+  if(VI_RE.test(t)) return "vi";
+  const w = t.match(/[a-z]+/g) || []; if(!w.length) return "en";
+  let v=0,e=0; for(const x of w){ if(VI_W.has(x)) v++; if(EN_W.has(x)) e++; }
+  if(v>e) return "vi"; if(e>v) return "en";
+  return w.filter(x=>x.length<=3).length/w.length > .62 ? "vi" : "en";
+}
+const other = c => c==="vi" ? "en" : "vi";
+
+/* ---------------------------------------------------------------- dịch */
+/* Trong app Android, gọi API bằng Java để không dính chặn CORS.
+   Trong trình duyệt thì dùng fetch.                                      */
+let reqSeq = 0; const pending = {};
+window.__net = (id, ok, payload) => {
+  const p = pending[id]; if(!p) return; delete pending[id];
+  ok ? p.res(payload) : p.rej(new Error(payload));
+};
+function bridgeHttp(url){
+  return new Promise((res, rej) => {
+    const id = "r" + (++reqSeq);
+    pending[id] = {res, rej};
+    setTimeout(() => { if(pending[id]){ delete pending[id]; rej(new Error("quá thời gian chờ")); } }, 25000);
+    AND.httpGet(id, url);
+  });
+}
+async function getText(url){
+  if(AND && AND.httpGet) return bridgeHttp(url);
+  const r = await fetch(url);
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  return r.text();
+}
+const unent = s => s.replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+  .replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+
+async function engMyMemory(text, s, t){
+  const d = JSON.parse(await getText(
+    "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) +
+    "&langpair=" + s + "|" + t));
+  if(String(d.responseStatus) !== "200") throw new Error(d.responseDetails || "lỗi MyMemory");
+  const out = unent((d.responseData && d.responseData.translatedText) || "");
+  if(!out.trim()) throw new Error("kết quả rỗng");
+  return {text: out, src: s};
+}
+async function engGoogle(text, s, t){
+  const d = JSON.parse(await getText(
+    "https://translate.googleapis.com/translate_a/single?client=gtx&dj=1&dt=t&sl=" +
+    s + "&tl=" + t + "&q=" + encodeURIComponent(text)));
+  const out = (d.sentences||[]).map(x => x.trans||"").join("");
+  if(!out.trim()) throw new Error("kết quả rỗng");
+  return {text: out, src: d.src || s};
+}
+function chunk(text, lim){
+  if(text.length <= lim) return [text];
+  const out = []; let buf = "";
+  for(let p of text.split(/(?:(?<=[.!?…])|(?<=\n))\s+/)){
+    while(p.length > lim){
+      let c = p.lastIndexOf(" ", lim); if(c < lim*0.6) c = lim;
+      if(buf){ out.push(buf); buf = ""; }
+      out.push(p.slice(0,c)); p = p.slice(c).trimStart();
+    }
+    if((buf+" "+p).trim().length <= lim) buf = buf ? buf+" "+p : p;
+    else { if(buf) out.push(buf); buf = p; }
+  }
+  if(buf) out.push(buf);
+  return out.filter(x => x.trim());
+}
+async function translate(text, src, tgt){
+  text = (text||"").trim();
+  if(!text) return {text:"", src, tgt, engine:"-"};
+  const det = src === "auto" ? detect(text) : src;
+  const target = tgt || other(det);
+  const pref = $("engine").value;
+  const order = pref === "google"
+    ? [["Google", engGoogle, src==="auto"?"auto":det], ["MyMemory", engMyMemory, det]]
+    : [["MyMemory", engMyMemory, det], ["Google", engGoogle, src==="auto"?"auto":det]];
+  const errs = [];
+  for(const [name, fn, sl] of order){
+    try{
+      const parts = []; let d = det;
+      for(const c of chunk(text, 460)){
+        const r = await fn(c, sl, target);
+        parts.push(r.text);
+        if(r.src && r.src !== "auto") d = String(r.src).slice(0,2);
+      }
+      return {text: parts.join(" ").trim(), src: d, tgt: target, engine: name};
+    }catch(e){ errs.push(name + ": " + e.message); }
+  }
+  throw new Error("Không dịch được.\n" + errs.join("\n"));
+}
+
+/* --------------------------------------------------- micro (2 đường) */
+const WEBSR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let webRecog = null, sttCb = null;
+
+window.__stt = (kind, data) => {          // Android gọi ngược về đây
+  const cb = sttCb;
+  if(kind === "result"){ if(cb) cb.text(data); }
+  else if(kind === "status"){ if(cb) cb.status(data); }
+  else { sttCb = null; if(cb) cb.end(kind === "error" ? data : null); }
+};
+
+function startListen(lang, cb){
+  sttCb = cb;
+  if(AND && AND.startListening){ AND.startListening(lang === "vi" ? "vi-VN" : "en-US"); return true; }
+  if(!WEBSR){ sttCb = null; cb.end("Trình duyệt này không nhận dạng được giọng nói. Hãy dùng Chrome hoặc bản app."); return false; }
+  const r = new WEBSR();
+  r.lang = lang === "vi" ? "vi-VN" : "en-US";
+  r.interimResults = false; r.maxAlternatives = 1;
+  let got = false;
+  r.onstart  = () => cb.status("Đang nghe…");
+  r.onresult = e => { got = true; cb.text(e.results[0][0].transcript); };
+  r.onerror  = e => { webRecog = null; sttCb = null; cb.end(({
+      "not-allowed":"Chưa được cấp quyền micro.",
+      "service-not-allowed":"Không dùng được micro khi mở từ ổ đĩa (file://).",
+      "no-speech":"Không nghe thấy gì. Thử lại nhé.",
+      "audio-capture":"Không tìm thấy micro.",
+      "network":"Lỗi mạng khi nhận dạng."
+    })[e.error] || ("Lỗi micro: " + e.error)); };
+  r.onend = () => { webRecog = null; sttCb = null; cb.end(got ? null : ""); };
+  webRecog = r;
+  try{ r.start(); }catch(e){ sttCb = null; cb.end("Không bật được micro: " + e.message); return false; }
+  return true;
+}
+function stopListen(){
+  if(AND && AND.stopListening) AND.stopListening();
+  else if(webRecog){ try{ webRecog.stop(); }catch(e){} webRecog = null; }
+}
+
+/* --------------------------------------------------- đọc to (2 đường) */
+let voices = [];
+function loadVoices(){ try{ voices = speechSynthesis.getVoices() || []; }catch(e){} }
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+function speak(text, lang){
+  text = (text||"").trim(); if(!text) return;
+  if(AND && AND.speak){ AND.speak(text, lang === "vi" ? "vi-VN" : "en-US"); return; }
+  if(!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const want = lang === "vi" ? "vi" : "en";
+  const v = voices.find(x => x.lang && x.lang.toLowerCase().startsWith(want));
+  if(v) u.voice = v;
+  u.lang = want === "vi" ? "vi-VN" : "en-US";
+  speechSynthesis.speak(u);
+}
+function shutUp(){
+  if(AND && AND.stopSpeak) AND.stopSpeak();
+  else if(window.speechSynthesis) speechSynthesis.cancel();
+}
+
+/* ---------------------------------------------------------------- lịch sử */
+let H = [];
+try{ H = JSON.parse(localStorage.getItem("tev_h") || "[]"); }catch(e){}
+const saveH = () => { try{ localStorage.setItem("tev_h", JSON.stringify(H.slice(0,1000))); }catch(e){} };
+function addH(source, result, src, tgt, engine, via){
+  H.unshift({id:Date.now()+"."+Math.random().toString(36).slice(2,6), ts:Date.now(),
+             source, result, src, tgt, engine, via:via||"text"});
+  H = H.slice(0,1000); saveH(); renderH();
+}
+const fmtT = ts => new Date(ts).toLocaleString("vi-VN",
+  {day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+const esc = s => (s||"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderH(){
+  const term = ($("q").value||"").trim().toLowerCase();
+  const rows = H.filter(h => !term ||
+    (h.source||"").toLowerCase().includes(term) || (h.result||"").toLowerCase().includes(term));
+  $("hlist").innerHTML = rows.length ? rows.map(h => `
+    <div class="hrow" data-id="${h.id}">
+      <div class="m"><span>${(h.src||"").toUpperCase()} → ${(h.tgt||"").toUpperCase()} · ${esc(h.engine||"")}</span><span>${fmtT(h.ts)}</span></div>
+      <div class="s">${esc(h.source)}</div>
+      <div class="r">${esc(h.result)}</div>
+      <div class="hact">
+        <button data-a="use">Dùng lại</button>
+        <button data-a="copy">Sao chép</button>
+        <button data-a="say">🔊 Đọc</button>
+        <button data-a="del">Xoá</button>
+      </div>
+    </div>`).join("")
+    : `<div class="empty"><div>🕘</div><div>Chưa có bản ghi nào</div></div>`;
+}
+function download(name, body, mime){
+  if(AND && AND.saveFile){ AND.saveFile(name, body); toast("Đã lưu vào thư mục Tải về"); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([body], {type: mime + ";charset=utf-8"}));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+
+/* ---------------------------------------------------------------- điều hướng */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("on"));
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); $(b.dataset.tab).classList.add("on");
+  document.querySelector("main").scrollTop = 0;
+});
+
+function refreshLangs(){
+  $("src").textContent = S.src === "auto" ? "AUTO" : FULL[S.src];
+  $("tgt").textContent = FULL[S.tgt];
+  $("src").className = "pill " + (S.src === "auto" ? "" : S.src);
+  $("tgt").className = "pill " + S.tgt;
+}
+$("src").onclick = () => {
+  const o = ["auto","en","vi"]; S.src = o[(o.indexOf(S.src)+1)%3];
+  if(S.src !== "auto" && S.src === S.tgt) S.tgt = other(S.src);
+  refreshLangs();
+};
+$("tgt").onclick = () => { S.tgt = other(S.tgt); if(S.src === S.tgt) S.src = "auto"; refreshLangs(); };
+$("swap").onclick = () => {
+  if(S.src === "auto"){ S.src = S.tgt; S.tgt = other(S.tgt); }
+  else { const a = S.src; S.src = S.tgt; S.tgt = a; }
+  const a = $("in").value, b = $("out").textContent;
+  if(b.trim()){ $("in").value = b; $("out").textContent = a; count(); }
+  refreshLangs();
+};
+refreshLangs();
+
+const count = () => $("cnt").textContent = $("in").value.length + " ký tự";
+$("in").oninput = count;
+$("clear").onclick = () => { $("in").value=""; $("out").textContent=""; $("via").textContent=""; count(); };
+$("copy").onclick = () => {
+  const t = $("out").textContent; if(!t.trim()) return;
+  if(AND && AND.copy){ AND.copy(t); toast("Đã sao chép"); return; }
+  navigator.clipboard.writeText(t).then(() => toast("Đã sao chép"), () => toast("Không sao chép được"));
+};
+$("say").onclick  = () => speak($("out").textContent, S.tgt);
+$("shut").onclick = shutUp;
+
+async function doTranslate(){
+  const text = $("in").value.trim();
+  if(!text){ toast("Hãy nhập hoặc nói nội dung cần dịch"); return; }
+  if(S.busy) return;
+  S.busy = true; $("go").disabled = true; $("go").textContent = "ĐANG DỊCH…";
+  try{
+    const r = await translate(text, S.src, S.src === "auto" ? null : S.tgt);
+    $("out").textContent = r.text;
+    $("via").textContent = "qua " + r.engine;
+    if(S.src === "auto"){ S.tgt = r.tgt; refreshLangs(); }
+    addH(text, r.text, r.src, r.tgt, r.engine);
+    speak(r.text, r.tgt);
+  }catch(e){ toast(e.message.split("\n")[0]); }
+  finally{ S.busy = false; $("go").disabled = false; $("go").textContent = "DỊCH"; }
+}
+$("go").onclick = doTranslate;
+
+/* --- micro tab 1 --- */
+let micOn = false;
+$("mic").onclick = () => {
+  const b = $("mic");
+  if(micOn){ stopListen(); return; }
+  micOn = true; b.classList.add("live"); b.textContent = "⏹ Dừng";
+  const done = () => { micOn = false; b.classList.remove("live"); b.textContent = "🎤 Nói"; };
+  startListen(S.src === "auto" ? "en" : S.src, {
+    status: m => toast(m),
+    text: txt => {
+      const cur = $("in").value.trim();
+      $("in").value = cur ? cur + " " + txt : txt;
+      count();
+      if(S.src === "auto"){ S.tgt = other(detect(txt)); refreshLangs(); }
+      setTimeout(doTranslate, 150);
+    },
+    end: err => { done(); if(err) toast(err); }
+  });
+};
+
+/* --- hội thoại --- */
+let conv = [];
+function renderChat(){
+  const c = $("chat");
+  c.innerHTML = conv.length ? conv.map((x,i) => `
+    <div class="bub ${x.lang}">
+      <div class="tg"><span>${x.lang==="en"?"EN → VI":"VI → EN"}</span>
+        <button class="sp" data-i="${i}">🔊</button></div>
+      <div class="o">${esc(x.o)}</div><div class="t">${esc(x.t)}</div>
+    </div>`).join("")
+    : `<div class="empty"><div>🗣</div><div>Chưa có hội thoại nào</div></div>`;
+  c.scrollTop = c.scrollHeight;
+}
+$("chat").onclick = e => {
+  const b = e.target.closest("button[data-i]"); if(!b) return;
+  const x = conv[+b.dataset.i]; if(x) speak(x.t, other(x.lang));
+};
+let convOn = null;
+function convListen(lang){
+  if(convOn){ stopListen(); return; }
+  const btn = lang === "en" ? $("cEn") : $("cVi");
+  const oth = lang === "en" ? $("cVi") : $("cEn");
+  convOn = lang; btn.classList.add("live"); oth.disabled = true;
+  const done = () => { convOn = null; btn.classList.remove("live"); oth.disabled = false; };
+  startListen(lang, {
+    status: m => $("cSt").textContent = m,
+    text: async txt => {
+      $("cSt").textContent = "Đang dịch…";
+      try{
+        const r = await translate(txt, lang, other(lang));
+        conv.push({lang, o: txt, t: r.text}); renderChat();
+        addH(txt, r.text, lang, other(lang), r.engine, "conversation");
+        $("cSt").textContent = "";
+        speak(r.text, other(lang));
+      }catch(e){ $("cSt").textContent = e.message.split("\n")[0]; }
+    },
+    end: err => { done(); $("cSt").textContent = err || ""; }
+  });
+}
+$("cEn").onclick = () => convListen("en");
+$("cVi").onclick = () => convListen("vi");
+$("cClr").onclick = () => { conv = []; renderChat(); };
+renderChat();
+
+/* --- lịch sử --- */
+$("q").oninput = renderH;
+$("hlist").onclick = e => {
+  const btn = e.target.closest("button[data-a]");
+  const row = e.target.closest(".hrow"); if(!row) return;
+  const h = H.find(x => x.id === row.dataset.id); if(!h) return;
+  const a = btn && btn.dataset.a;
+  if(a === "copy"){
+    if(AND && AND.copy) AND.copy(h.result); else navigator.clipboard.writeText(h.result);
+    toast("Đã sao chép");
+  } else if(a === "say"){ speak(h.result, h.tgt); }
+  else if(a === "del"){ H = H.filter(x => x.id !== h.id); saveH(); renderH(); }
+  else {
+    document.querySelector('nav button[data-tab="t1"]').click();
+    $("in").value = h.source; $("out").textContent = h.result;
+    $("via").textContent = "qua " + (h.engine||"");
+    S.src = h.src; S.tgt = h.tgt; refreshLangs(); count();
+  }
+};
+$("clrH").onclick = () => {
+  if(H.length && confirm("Xoá toàn bộ " + H.length + " bản ghi?")){ H = []; saveH(); renderH(); }
+};
+$("expTxt").onclick = () => download("lich-su-dich.txt",
+  "LICH SU DICH - TranslatorEV\n" + "=".repeat(46) + "\n\n" +
+  H.map(h => `[${fmtT(h.ts)}] ${(h.src||"").toUpperCase()} → ${(h.tgt||"").toUpperCase()}\n  Gốc  : ${h.source}\n  Dịch : ${h.result}\n`).join("\n"),
+  "text/plain");
+$("expCsv").onclick = () => {
+  const q = s => '"' + String(s||"").replace(/"/g,'""') + '"';
+  download("lich-su-dich.csv", "﻿" + ["Thời gian,Từ,Sang,Gốc,Dịch,Nguồn"]
+    .concat(H.map(h => [fmtT(h.ts),h.src,h.tgt,h.source,h.result,h.engine].map(q).join(",")))
+    .join("\r\n"), "text/csv");
+};
+renderH();
+
+/* --- khởi động --- */
+(function(){
+  $("mode").textContent = AND ? "Anh ⇄ Việt · bản ứng dụng" : "Anh ⇄ Việt";
+  const m = [];
+  if(!AND){
+    if(!WEBSR) m.push("Trình duyệt này <b>không nhận dạng được giọng nói</b>. Dùng <b>Chrome</b> hoặc cài bản ứng dụng (.apk).");
+    else if(location.protocol === "file:")
+      m.push("Đang mở từ ổ đĩa nên trình duyệt <b>chặn micro</b>. Gõ chữ và đọc to vẫn chạy tốt.");
+    if("serviceWorker" in navigator && location.protocol.startsWith("http"))
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+  if(m.length){ $("warn").innerHTML = m.join("<br><br>"); $("warn").classList.add("on"); }
+  count();
+})();
+
+/* Android gọi khi bấm nút Back của điện thoại */
+window.__back = () => {
+  const cur = document.querySelector("nav button.on");
+  if(cur && cur.dataset.tab !== "t1"){
+    document.querySelector('nav button[data-tab="t1"]').click();
+    return true;
+  }
+  return false;
+};
+</script>
+</body>
+</html>
