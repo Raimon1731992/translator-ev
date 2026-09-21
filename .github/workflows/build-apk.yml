@@ -11,12 +11,14 @@ permissions:
 jobs:
   build:
     name: Dong goi TranslatorEV.apk
-    runs-on: ubuntu-latest
+    # Ghim ubuntu-24.04 thay vi ubuntu-latest, de thang 10/2026 GitHub
+    # doi sang Ubuntu 26 thi workflow nay khong bi anh huong.
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
 
     steps:
       - name: Lay ma nguon
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Xem cau truc thu muc trong repo
         run: |
@@ -41,24 +43,42 @@ jobs:
           ls -la "$DIR"
 
       - name: Cai JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Cai Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Cai platform 34 va build-tools
-        run: sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
-      - name: Tao Gradle wrapper (ghim ban 8.7)
-        working-directory: ${{ steps.find.outputs.dir }}
-        run: gradle wrapper --gradle-version 8.7 --distribution-type bin
+      # Cai dung Gradle 8.7 - ban di kem voi Android Gradle Plugin 8.5.2.
+      # Khong dung "gradle wrapper" nua: lenh do muon ban Gradle cai san tren
+      # may chu, ma ban do co the la Gradle 9 va se xung dot voi AGP 8.5.
+      - name: Cai Gradle 8.7
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.7'
 
       - name: Build ban debug
         working-directory: ${{ steps.find.outputs.dir }}
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: In thong tin chan doan khi build hong
+        if: failure()
+        run: |
+          echo "--- java ---";        java -version 2>&1 || true
+          echo "--- gradle ---";      gradle --version 2>&1 | head -20 || true
+          echo "--- ANDROID_HOME ---"; echo "${ANDROID_HOME:-chua dat}"
+          ls "${ANDROID_HOME}/platforms" 2>/dev/null || true
+          echo "--- noi dung thu muc du an ---"
+          ls -la "${{ steps.find.outputs.dir }}" || true
+          echo "--- app/build.gradle ---"
+          cat "${{ steps.find.outputs.dir }}/app/build.gradle" 2>/dev/null || true
 
       - name: Gom file APK lai mot cho
         run: |
