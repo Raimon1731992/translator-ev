@@ -1,0 +1,79 @@
+name: Build APK
+
+# Chay khi co bat ky thay doi nao duoc day len, hoac bam nut chay tay.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Dong goi TranslatorEV.apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+
+      - name: Xem cau truc thu muc trong repo
+        run: |
+          echo "--- Cay thu muc (3 cap dau) ---"
+          find . -maxdepth 3 -not -path "./.git/*" | sort | head -60
+
+      # Tu do tim thu muc chua settings.gradle -> chay duoc du du an nam
+      # o goc repo hay bi long them mot cap thu muc.
+      - name: Tim thu muc du an Gradle
+        id: find
+        run: |
+          set -e
+          DIR=$(find . \( -name settings.gradle -o -name settings.gradle.kts \) \
+                -not -path "*/build/*" -not -path "./.git/*" \
+                | head -n 1 | xargs -r dirname)
+          if [ -z "$DIR" ]; then
+            echo "::error::Khong tim thay settings.gradle trong repo. Ban chua tai thu muc du an len, hoac tai thieu file."
+            exit 1
+          fi
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Du an Gradle nam o: $DIR"
+          ls -la "$DIR"
+
+      - name: Cai JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cai Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cai platform 34 va build-tools
+        run: sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+      - name: Tao Gradle wrapper (ghim ban 8.7)
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: gradle wrapper --gradle-version 8.7 --distribution-type bin
+
+      - name: Build ban debug
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Gom file APK lai mot cho
+        run: |
+          mkdir -p out
+          find . -name "*.apk" -path "*outputs*" -exec cp {} out/ \; || true
+          if [ -f out/app-debug.apk ]; then
+            mv out/app-debug.apk out/TranslatorEV.apk
+          fi
+          echo "--- File se tai len ---"
+          ls -la out
+
+      - name: Tai file APK len (muc Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: TranslatorEV-apk
+          path: out/*.apk
+          retention-days: 30
+          if-no-files-found: error
