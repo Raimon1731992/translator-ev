@@ -32,7 +32,8 @@
   header b{font-size:16px;display:block;line-height:1.2}
   header small{font-size:11px;color:var(--faint)}
   header .sp{flex:1}
-  #engine{background:var(--s3);color:var(--text);border:0;border-radius:8px;padding:7px 8px;font-size:12px}
+  .icobtn{background:var(--s3);border:0;border-radius:9px;color:var(--dim);
+          padding:9px 12px;font-size:15px}
 
   main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 16px}
   .tab{display:none}.tab.on{display:block}
@@ -64,18 +65,20 @@
        background:var(--s3);color:var(--dim)}
   .btn:active{filter:brightness(1.35)}
   .btn:disabled{opacity:.4}
-  .btn.mic{background:var(--rec);color:#fff}
+  .btn.micEn{background:var(--en);color:#1a1102}
+  .btn.micVi{background:var(--vi);color:#04150d}
   .btn.live{background:var(--warn);color:#1a1400;animation:pulse 1s infinite}
-  .btn.say{background:var(--vi);color:#04150d}
+  .btn.say{background:var(--accent);color:#fff}
   @keyframes pulse{50%{opacity:.55}}
   .cnt{margin-left:auto;font-size:11px;color:var(--faint)}
   .go{width:100%;border:0;border-radius:13px;background:var(--accent);color:#fff;
       padding:16px;font-size:17px;font-weight:700}
   .go:disabled{opacity:.5}
+  .hint{font-size:11.5px;color:var(--faint);padding:0 12px 10px;margin:0}
 
   /* hoi thoai */
   #chat{background:var(--surface);border:1px solid var(--border);border-radius:14px;
-        padding:12px;min-height:44vh}
+        padding:12px;min-height:40vh}
   .bub{max-width:88%;background:var(--s2);border:1px solid var(--border);border-radius:13px;
        padding:10px 13px;margin:8px 0}
   .bub.en{border-color:var(--en)}
@@ -89,7 +92,7 @@
   .big.en{background:var(--en);color:#1a1102}
   .big.vi{background:var(--vi);color:#04150d}
   .big.live{background:var(--warn);color:#1a1400;animation:pulse 1s infinite}
-  .empty{text-align:center;color:var(--faint);padding:56px 10px}
+  .empty{text-align:center;color:var(--faint);padding:46px 10px}
   .empty div:first-child{font-size:36px;opacity:.35}
 
   /* lich su */
@@ -106,14 +109,33 @@
   .row{display:flex;gap:7px;margin-bottom:10px}
   .row .btn{flex:1;text-align:center}
 
-  nav{
-    display:flex;background:var(--surface);border-top:1px solid var(--border);
-    padding-bottom:var(--safeB);
+  /* cai dat */
+  #sheet{position:fixed;inset:0;background:#0009;z-index:60;display:none;
+         align-items:flex-end}
+  #sheet.on{display:flex}
+  #sheet .panel{
+    background:var(--surface);width:100%;max-height:88%;overflow-y:auto;
+    border-radius:18px 18px 0 0;padding:18px 16px calc(20px + var(--safeB));
+    border-top:1px solid var(--border);
   }
-  nav button{
-    flex:1;background:none;border:0;color:var(--faint);padding:10px 4px 11px;
-    font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;
+  #sheet h2{margin:0 0 4px;font-size:19px}
+  #sheet .sub{margin:0 0 16px;font-size:13px;color:var(--faint)}
+  .fld{margin-bottom:14px}
+  .fld label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px;font-weight:600}
+  .fld select,.fld input{
+    width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;
+    padding:12px;color:var(--text);outline:none;font-size:15px;
   }
+  .fld p{margin:6px 0 0;font-size:11.5px;color:var(--faint);line-height:1.5}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;border:1px solid var(--border);background:var(--s2);color:var(--dim);
+              border-radius:10px;padding:11px 6px;font-size:13px;font-weight:600}
+  .seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  nav{display:flex;background:var(--surface);border-top:1px solid var(--border);
+      padding-bottom:var(--safeB)}
+  nav button{flex:1;background:none;border:0;color:var(--faint);padding:10px 4px 11px;
+    font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
   nav button i{font-style:normal;font-size:19px;line-height:1}
   nav button.on{color:var(--accent)}
 
@@ -121,7 +143,7 @@
     position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + var(--safeB));
     background:#0b0f14ee;border:1px solid var(--border);color:var(--text);
     padding:10px 16px;border-radius:22px;font-size:13.5px;max-width:86%;text-align:center;
-    opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .2s;z-index:70;
   }
   #toast.on{opacity:1}
 </style>
@@ -132,7 +154,7 @@
   <span class="lg">⇄</span>
   <span><b>TranslatorEV</b><small id="mode">Anh ⇄ Việt</small></span>
   <span class="sp"></span>
-  <select id="engine"><option value="mymemory">MyMemory</option><option value="google">Google</option></select>
+  <button class="icobtn" id="openSet">⚙</button>
 </header>
 
 <main>
@@ -148,9 +170,14 @@
 
     <div class="card">
       <h3 style="color:var(--accent)">VĂN BẢN NGUỒN</h3>
-      <textarea id="in" placeholder="Gõ nội dung, hoặc bấm 🎤 Nói…"></textarea>
+      <textarea id="in" placeholder="Gõ nội dung, hoặc bấm nút micro bên dưới…"></textarea>
       <div class="tools">
-        <button class="btn mic" id="mic">🎤 Nói</button>
+        <button class="btn micEn" id="micEn">🎤 Nói English</button>
+        <button class="btn micVi" id="micVi">🎤 Nói Tiếng Việt</button>
+      </div>
+      <p class="hint">Chọn đúng nút theo ngôn ngữ bạn sắp nói — máy cần biết trước
+        mới nghe chính xác.</p>
+      <div class="tools" style="padding-top:0">
         <button class="btn" id="clear">Xoá</button>
         <span class="cnt" id="cnt">0 ký tự</span>
       </div>
@@ -198,23 +225,89 @@
   <button data-tab="t3"><i>🕘</i>Lịch sử</button>
 </nav>
 
+<!-- ============ CÀI ĐẶT ============ -->
+<div id="sheet">
+  <div class="panel">
+    <h2>Cài đặt</h2>
+    <p class="sub">Mọi thứ ở đây lưu trên máy bạn, không gửi đi đâu.</p>
+
+    <div class="fld">
+      <label>Nguồn dịch ưu tiên</label>
+      <select id="setEngine">
+        <option value="auto">Tự động — Google trước, hỏng thì chuyển nguồn khác</option>
+        <option value="google">Google Translate</option>
+        <option value="lingva">Lingva (ngõ khác vào Google)</option>
+        <option value="mymemory">MyMemory</option>
+        <option value="claude">Claude — cần khoá API</option>
+        <option value="deepl">DeepL — cần khoá API</option>
+      </select>
+      <p>Google cho chất lượng tốt nhất trong nhóm miễn phí. Claude dịch tự nhiên
+        và hiểu ngữ cảnh hơn cả, nhưng cần khoá API trả tiền theo lượt dùng.</p>
+    </div>
+
+    <div class="fld">
+      <label>Khoá API (tuỳ chọn)</label>
+      <input id="setKey" type="password" placeholder="sk-ant-… hoặc khoá DeepL"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+      <p>Lấy khoá Claude ở console.anthropic.com, khoá DeepL ở deepl.com/pro-api.
+        Khoá chỉ nằm trong bộ nhớ của ứng dụng trên máy này.</p>
+    </div>
+
+    <div class="fld">
+      <label>Mô hình Claude</label>
+      <input id="setModel" placeholder="claude-haiku-4-5" autocapitalize="off" spellcheck="false">
+      <p>Để trống dùng mặc định. Đổi được khi Anthropic ra mô hình mới.</p>
+    </div>
+
+    <div class="fld">
+      <label>Tự đọc bản dịch</label>
+      <div class="seg">
+        <button id="spkOn" data-v="1">Bật</button>
+        <button id="spkOff" data-v="0">Tắt</button>
+      </div>
+    </div>
+
+    <div class="fld" id="langChk">
+      <label>Gói nhận dạng giọng nói</label>
+      <div class="seg">
+        <button id="chkVi">Kiểm tra tiếng Việt</button>
+        <button id="chkEn">Kiểm tra tiếng Anh</button>
+      </div>
+      <p id="langInfo">Bấm để xem máy đã có gói nhận dạng chưa. Thiếu thì máy sẽ
+        tự tải về (cần Android 13 trở lên).</p>
+    </div>
+
+    <div class="row" style="margin-top:18px">
+      <button class="btn" id="setClose">Đóng</button>
+      <button class="btn say" id="setSave">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
-const AND = window.AndroidBridge || null;      // cầu nối app Android (nếu có)
+const AND = window.AndroidBridge || null;
 const FULL = {en:"English", vi:"Tiếng Việt", auto:"Tự nhận diện"};
+const CODE = {en:"en-US", vi:"vi-VN"};
 let S = {src:"auto", tgt:"vi", busy:false};
+
+/* ---------------------------------------------------------------- cài đặt */
+const DEF = {engine:"auto", key:"", model:"claude-haiku-4-5", speak:"1"};
+let CFG = Object.assign({}, DEF);
+try { CFG = Object.assign({}, DEF, JSON.parse(localStorage.getItem("tev_cfg") || "{}")); } catch(e){}
+const saveCfg = () => { try { localStorage.setItem("tev_cfg", JSON.stringify(CFG)); } catch(e){} };
 
 /* ---------------------------------------------------------------- toast */
 let toastT;
 function toast(msg){
   const t = $("toast"); t.textContent = msg; t.classList.add("on");
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600);
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3000);
 }
 
-/* ------------------------------------------------ nhận diện ngôn ngữ local */
+/* ------------------------------------------------ nhận diện ngôn ngữ (chữ) */
 const VI_RE = /[ăâđêôơưàảãáạằẳẵắặầẩẫấậèẻẽéẹềểễếệìỉĩíịòỏõóọồổỗốộờởỡớợùủũúụừửữứựỳỷỹýỵ]/i;
 const VI_W = new Set("khong toi ban cua mot nguoi duoc nhung voi nay cho den the gi nao roi chua dang se minh chung rat qua cung hay lam biet muon thich can phai tren duoi trong ngoai nen boi tai hoac hoi xin cam on chao em anh chi co chu bac ong ba moi tu ve".split(" "));
 const EN_W = new Set("the and you that was for are with his they this have from one had but what were when your can said there use each which she how their will other about out many then them these would into has more her two like him see time could people than been its who now hello please thanks thank good morning yes help".split(" "));
@@ -228,33 +321,64 @@ function detect(t){
 }
 const other = c => c==="vi" ? "en" : "vi";
 
-/* ---------------------------------------------------------------- dịch */
-/* Trong app Android, gọi API bằng Java để không dính chặn CORS.
-   Trong trình duyệt thì dùng fetch.                                      */
+/* ---------------------------------------------------------------- mạng */
 let reqSeq = 0; const pending = {};
 window.__net = (id, ok, payload) => {
   const p = pending[id]; if(!p) return; delete pending[id];
   ok ? p.res(payload) : p.rej(new Error(payload));
 };
-function bridgeHttp(url){
+function bridgeReq(url, headers, body){
   return new Promise((res, rej) => {
     const id = "r" + (++reqSeq);
     pending[id] = {res, rej};
-    setTimeout(() => { if(pending[id]){ delete pending[id]; rej(new Error("quá thời gian chờ")); } }, 25000);
-    AND.httpGet(id, url);
+    setTimeout(() => { if(pending[id]){ delete pending[id]; rej(new Error("quá thời gian chờ")); } }, 35000);
+    if(body == null) AND.httpGet(id, url);
+    else AND.httpPost(id, url, JSON.stringify(headers||{}), body);
   });
 }
-async function getText(url){
-  if(AND && AND.httpGet) return bridgeHttp(url);
+async function httpGet(url){
+  if(AND && AND.httpGet) return bridgeReq(url, null, null);
   const r = await fetch(url);
   if(!r.ok) throw new Error("HTTP " + r.status);
+  return r.text();
+}
+async function httpPost(url, headers, body){
+  if(AND && AND.httpPost) return bridgeReq(url, headers, body);
+  const r = await fetch(url, {method:"POST", headers:Object.assign({"Content-Type":"application/json"}, headers||{}), body});
+  if(!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0,160));
   return r.text();
 }
 const unent = s => s.replace(/&quot;/g,'"').replace(/&#39;/g,"'")
   .replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
 
+/* ---------------------------------------------------------------- engines */
+async function engGoogle(text, s, t){
+  const d = JSON.parse(await httpGet(
+    "https://translate.googleapis.com/translate_a/single?client=gtx&dj=1&dt=t&sl=" +
+    s + "&tl=" + t + "&q=" + encodeURIComponent(text)));
+  const out = (d.sentences||[]).map(x => x.trans||"").join("");
+  if(!out.trim()) throw new Error("kết quả rỗng");
+  return {text: out, src: d.src || s};
+}
+
+const LINGVA = ["https://lingva.ml", "https://translate.plausibility.cloud",
+                "https://lingva.garudalinux.org", "https://translate.projectsegfau.lt"];
+async function engLingva(text, s, t){
+  let last;
+  for(const host of LINGVA){
+    try{
+      const d = JSON.parse(await httpGet(
+        host + "/api/v1/" + s + "/" + t + "/" + encodeURIComponent(text)));
+      const out = d.translation || "";
+      if(!out.trim()) throw new Error("kết quả rỗng");
+      return {text: out, src: s};
+    }catch(e){ last = e; }
+  }
+  throw last || new Error("không có máy chủ Lingva nào trả lời");
+}
+
 async function engMyMemory(text, s, t){
-  const d = JSON.parse(await getText(
+  const d = JSON.parse(await httpGet(
     "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) +
     "&langpair=" + s + "|" + t));
   if(String(d.responseStatus) !== "200") throw new Error(d.responseDetails || "lỗi MyMemory");
@@ -262,14 +386,65 @@ async function engMyMemory(text, s, t){
   if(!out.trim()) throw new Error("kết quả rỗng");
   return {text: out, src: s};
 }
-async function engGoogle(text, s, t){
-  const d = JSON.parse(await getText(
-    "https://translate.googleapis.com/translate_a/single?client=gtx&dj=1&dt=t&sl=" +
-    s + "&tl=" + t + "&q=" + encodeURIComponent(text)));
-  const out = (d.sentences||[]).map(x => x.trans||"").join("");
-  if(!out.trim()) throw new Error("kết quả rỗng");
-  return {text: out, src: d.src || s};
+
+async function engClaude(text, s, t){
+  const key = (CFG.key||"").trim();
+  if(!key) throw new Error("chưa nhập khoá API Claude trong Cài đặt");
+  const from = FULL[s] || "ngôn ngữ nguồn", to = FULL[t];
+  const sys =
+    "Bạn là một phiên dịch viên Anh–Việt chuyên nghiệp. " +
+    "Dịch đoạn văn người dùng gửi từ " + from + " sang " + to + ". " +
+    "Giữ nguyên giọng điệu, mức độ trang trọng và ý định của câu gốc; " +
+    "dùng cách nói tự nhiên của người bản xứ thay vì dịch từng chữ. " +
+    "Giữ nguyên tên riêng, số liệu, đơn vị và định dạng xuống dòng. " +
+    "CHỈ trả về bản dịch, không thêm lời giải thích, không thêm dấu ngoặc kép.";
+  const body = JSON.stringify({
+    model: (CFG.model||"").trim() || "claude-haiku-4-5",
+    max_tokens: 4000,
+    system: sys,
+    messages: [{role:"user", content: text}]
+  });
+  const raw = await httpPost("https://api.anthropic.com/v1/messages", {
+    "x-api-key": key,
+    "anthropic-version": "2023-06-01",
+    "content-type": "application/json"
+  }, body);
+  const d = JSON.parse(raw);
+  if(d.error) throw new Error(d.error.message || "Claude báo lỗi");
+  const out = (d.content||[]).filter(x => x.type === "text").map(x => x.text).join("").trim();
+  if(!out) throw new Error("kết quả rỗng");
+  return {text: out, src: s};
 }
+
+async function engDeepL(text, s, t){
+  const key = (CFG.key||"").trim();
+  if(!key) throw new Error("chưa nhập khoá API DeepL trong Cài đặt");
+  const host = key.endsWith(":fx") ? "https://api-free.deepl.com" : "https://api.deepl.com";
+  const body = JSON.stringify({
+    text: [text],
+    source_lang: s === "vi" ? "VI" : "EN",
+    target_lang: t === "vi" ? "VI" : "EN-US"
+  });
+  const d = JSON.parse(await httpPost(host + "/v2/translate", {
+    "Authorization": "DeepL-Auth-Key " + key,
+    "Content-Type": "application/json"
+  }, body));
+  if(d.message) throw new Error(d.message);
+  const out = ((d.translations||[])[0]||{}).text || "";
+  if(!out.trim()) throw new Error("kết quả rỗng");
+  return {text: out, src: s};
+}
+
+const ENGINES = {
+  google:   {name:"Google",     fn:engGoogle,   auto:true,  key:false},
+  lingva:   {name:"Lingva",     fn:engLingva,   auto:true,  key:false},
+  mymemory: {name:"MyMemory",   fn:engMyMemory, auto:true,  key:false},
+  claude:   {name:"Claude",     fn:engClaude,   auto:false, key:true},
+  deepl:    {name:"DeepL",      fn:engDeepL,    auto:false, key:true}
+};
+/* Thứ tự khi để Tự động: Google tốt nhất trong nhóm miễn phí nên đi đầu. */
+const AUTO_ORDER = ["google", "lingva", "mymemory"];
+
 function chunk(text, lim){
   if(text.length <= lim) return [text];
   const out = []; let buf = "";
@@ -285,48 +460,67 @@ function chunk(text, lim){
   if(buf) out.push(buf);
   return out.filter(x => x.trim());
 }
+
 async function translate(text, src, tgt){
   text = (text||"").trim();
   if(!text) return {text:"", src, tgt, engine:"-"};
   const det = src === "auto" ? detect(text) : src;
   const target = tgt || other(det);
-  const pref = $("engine").value;
-  const order = pref === "google"
-    ? [["Google", engGoogle, src==="auto"?"auto":det], ["MyMemory", engMyMemory, det]]
-    : [["MyMemory", engMyMemory, det], ["Google", engGoogle, src==="auto"?"auto":det]];
+
+  let order;
+  if(CFG.engine && CFG.engine !== "auto"){
+    order = [CFG.engine].concat(AUTO_ORDER.filter(k => k !== CFG.engine));
+  } else {
+    order = AUTO_ORDER.slice();
+    if((CFG.key||"").trim()) order = order;   // có khoá vẫn phải chọn tay mới dùng
+  }
+
   const errs = [];
-  for(const [name, fn, sl] of order){
+  for(const key of order){
+    const eng = ENGINES[key]; if(!eng) continue;
+    // Claude gửi cả đoạn một lần (hiểu ngữ cảnh tốt hơn), còn lại thì cắt nhỏ
+    const lim = (key === "claude" || key === "deepl") ? 8000 : 460;
+    const sl = (key === "google" && src === "auto") ? "auto" : det;
     try{
       const parts = []; let d = det;
-      for(const c of chunk(text, 460)){
-        const r = await fn(c, sl, target);
+      for(const c of chunk(text, lim)){
+        const r = await eng.fn(c, sl, target);
         parts.push(r.text);
         if(r.src && r.src !== "auto") d = String(r.src).slice(0,2);
       }
-      return {text: parts.join(" ").trim(), src: d, tgt: target, engine: name};
-    }catch(e){ errs.push(name + ": " + e.message); }
+      return {text: parts.join(" ").trim(), src: d, tgt: target, engine: eng.name};
+    }catch(e){ errs.push(eng.name + ": " + e.message); }
   }
   throw new Error("Không dịch được.\n" + errs.join("\n"));
 }
 
-/* --------------------------------------------------- micro (2 đường) */
+/* --------------------------------------------------- micro */
 const WEBSR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let webRecog = null, sttCb = null;
 
-window.__stt = (kind, data) => {          // Android gọi ngược về đây
+window.__stt = (kind, data) => {
   const cb = sttCb;
   if(kind === "result"){ if(cb) cb.text(data); }
   else if(kind === "status"){ if(cb) cb.status(data); }
   else { sttCb = null; if(cb) cb.end(kind === "error" ? data : null); }
 };
+window.__lang = (code, state, detail) => {
+  const msg = {
+    installed:    "Máy đã có sẵn gói nhận dạng " + (code === "vi-VN" ? "tiếng Việt" : "tiếng Anh") + ".",
+    downloadable: "Máy chưa cài gói này, đang tải về nền. Thử lại sau vài phút.",
+    unsupported:  "Máy không hỗ trợ nhận dạng ngoại tuyến cho ngôn ngữ này — vẫn dùng được khi có mạng.",
+    unknown:      "Không kiểm tra được: " + (detail || "")
+  }[state] || state;
+  $("langInfo").textContent = msg;
+  toast(msg);
+};
 
 function startListen(lang, cb){
   sttCb = cb;
-  if(AND && AND.startListening){ AND.startListening(lang === "vi" ? "vi-VN" : "en-US"); return true; }
-  if(!WEBSR){ sttCb = null; cb.end("Trình duyệt này không nhận dạng được giọng nói. Hãy dùng Chrome hoặc bản app."); return false; }
+  if(AND && AND.startListening){ AND.startListening(CODE[lang]); return true; }
+  if(!WEBSR){ sttCb = null; cb.end("Trình duyệt này không nhận dạng được giọng nói."); return false; }
   const r = new WEBSR();
-  r.lang = lang === "vi" ? "vi-VN" : "en-US";
-  r.interimResults = false; r.maxAlternatives = 1;
+  r.lang = CODE[lang]; r.interimResults = false; r.maxAlternatives = 1;
   let got = false;
   r.onstart  = () => cb.status("Đang nghe…");
   r.onresult = e => { got = true; cb.text(e.results[0][0].transcript); };
@@ -347,27 +541,28 @@ function stopListen(){
   else if(webRecog){ try{ webRecog.stop(); }catch(e){} webRecog = null; }
 }
 
-/* --------------------------------------------------- đọc to (2 đường) */
+/* --------------------------------------------------- đọc to */
 let voices = [];
 function loadVoices(){ try{ voices = speechSynthesis.getVoices() || []; }catch(e){} }
 if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 
 function speak(text, lang){
   text = (text||"").trim(); if(!text) return;
-  if(AND && AND.speak){ AND.speak(text, lang === "vi" ? "vi-VN" : "en-US"); return; }
+  if(AND && AND.speak){ AND.speak(text, CODE[lang]); return; }
   if(!window.speechSynthesis) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   const want = lang === "vi" ? "vi" : "en";
   const v = voices.find(x => x.lang && x.lang.toLowerCase().startsWith(want));
   if(v) u.voice = v;
-  u.lang = want === "vi" ? "vi-VN" : "en-US";
+  u.lang = CODE[lang];
   speechSynthesis.speak(u);
 }
 function shutUp(){
   if(AND && AND.stopSpeak) AND.stopSpeak();
   else if(window.speechSynthesis) speechSynthesis.cancel();
 }
+const autoSpeak = () => CFG.speak !== "0";
 
 /* ---------------------------------------------------------------- lịch sử */
 let H = [];
@@ -401,7 +596,7 @@ function renderH(){
     : `<div class="empty"><div>🕘</div><div>Chưa có bản ghi nào</div></div>`;
 }
 function download(name, body, mime){
-  if(AND && AND.saveFile){ AND.saveFile(name, body); toast("Đã lưu vào thư mục Tải về"); return; }
+  if(AND && AND.saveFile){ AND.saveFile(name, body); return; }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([body], {type: mime + ";charset=utf-8"}));
   a.download = name; a.click();
@@ -459,31 +654,40 @@ async function doTranslate(){
     $("via").textContent = "qua " + r.engine;
     if(S.src === "auto"){ S.tgt = r.tgt; refreshLangs(); }
     addH(text, r.text, r.src, r.tgt, r.engine);
-    speak(r.text, r.tgt);
+    if(autoSpeak()) speak(r.text, r.tgt);
   }catch(e){ toast(e.message.split("\n")[0]); }
   finally{ S.busy = false; $("go").disabled = false; $("go").textContent = "DỊCH"; }
 }
 $("go").onclick = doTranslate;
 
-/* --- micro tab 1 --- */
-let micOn = false;
-$("mic").onclick = () => {
-  const b = $("mic");
+/* --- micro tab 1: hai nút, mỗi nút một ngôn ngữ rõ ràng --- */
+let micOn = null;
+function micPress(lang){
+  const btn = lang === "en" ? $("micEn") : $("micVi");
+  const oth = lang === "en" ? $("micVi") : $("micEn");
   if(micOn){ stopListen(); return; }
-  micOn = true; b.classList.add("live"); b.textContent = "⏹ Dừng";
-  const done = () => { micOn = false; b.classList.remove("live"); b.textContent = "🎤 Nói"; };
-  startListen(S.src === "auto" ? "en" : S.src, {
+  micOn = lang;
+  btn.classList.add("live"); btn.textContent = "⏹ Dừng";
+  oth.disabled = true;
+  const done = () => {
+    micOn = null; oth.disabled = false;
+    btn.classList.remove("live");
+    btn.textContent = lang === "en" ? "🎤 Nói English" : "🎤 Nói Tiếng Việt";
+  };
+  startListen(lang, {
     status: m => toast(m),
     text: txt => {
       const cur = $("in").value.trim();
       $("in").value = cur ? cur + " " + txt : txt;
       count();
-      if(S.src === "auto"){ S.tgt = other(detect(txt)); refreshLangs(); }
+      S.src = lang; S.tgt = other(lang); refreshLangs();
       setTimeout(doTranslate, 150);
     },
     end: err => { done(); if(err) toast(err); }
   });
-};
+}
+$("micEn").onclick = () => micPress("en");
+$("micVi").onclick = () => micPress("vi");
 
 /* --- hội thoại --- */
 let conv = [];
@@ -518,7 +722,7 @@ function convListen(lang){
         conv.push({lang, o: txt, t: r.text}); renderChat();
         addH(txt, r.text, lang, other(lang), r.engine, "conversation");
         $("cSt").textContent = "";
-        speak(r.text, other(lang));
+        if(autoSpeak()) speak(r.text, other(lang));
       }catch(e){ $("cSt").textContent = e.message.split("\n")[0]; }
     },
     end: err => { done(); $("cSt").textContent = err || ""; }
@@ -556,16 +760,45 @@ $("expTxt").onclick = () => download("lich-su-dich.txt",
   H.map(h => `[${fmtT(h.ts)}] ${(h.src||"").toUpperCase()} → ${(h.tgt||"").toUpperCase()}\n  Gốc  : ${h.source}\n  Dịch : ${h.result}\n`).join("\n"),
   "text/plain");
 $("expCsv").onclick = () => {
-  const q = s => '"' + String(s||"").replace(/"/g,'""') + '"';
+  const qq = s => '"' + String(s||"").replace(/"/g,'""') + '"';
   download("lich-su-dich.csv", "﻿" + ["Thời gian,Từ,Sang,Gốc,Dịch,Nguồn"]
-    .concat(H.map(h => [fmtT(h.ts),h.src,h.tgt,h.source,h.result,h.engine].map(q).join(",")))
+    .concat(H.map(h => [fmtT(h.ts),h.src,h.tgt,h.source,h.result,h.engine].map(qq).join(",")))
     .join("\r\n"), "text/csv");
 };
 renderH();
 
+/* --- cài đặt --- */
+function openSheet(){
+  $("setEngine").value = CFG.engine;
+  $("setKey").value    = CFG.key;
+  $("setModel").value  = CFG.model;
+  paintSpk();
+  $("langChk").style.display = AND ? "" : "none";
+  $("sheet").classList.add("on");
+}
+function paintSpk(){
+  $("spkOn").classList.toggle("on", CFG.speak !== "0");
+  $("spkOff").classList.toggle("on", CFG.speak === "0");
+}
+$("openSet").onclick = openSheet;
+$("setClose").onclick = () => $("sheet").classList.remove("on");
+$("sheet").onclick = e => { if(e.target === $("sheet")) $("sheet").classList.remove("on"); };
+$("spkOn").onclick  = () => { CFG.speak = "1"; paintSpk(); };
+$("spkOff").onclick = () => { CFG.speak = "0"; paintSpk(); };
+$("setSave").onclick = () => {
+  CFG.engine = $("setEngine").value;
+  CFG.key    = $("setKey").value.trim();
+  CFG.model  = $("setModel").value.trim() || DEF.model;
+  saveCfg();
+  $("sheet").classList.remove("on");
+  toast("Đã lưu cài đặt");
+};
+$("chkVi").onclick = () => { if(AND && AND.checkLanguage) AND.checkLanguage("vi-VN"); };
+$("chkEn").onclick = () => { if(AND && AND.checkLanguage) AND.checkLanguage("en-US"); };
+
 /* --- khởi động --- */
 (function(){
-  $("mode").textContent = AND ? "Anh ⇄ Việt · bản ứng dụng" : "Anh ⇄ Việt";
+  $("mode").textContent = AND ? "Anh ⇄ Việt · bản ứng dụng 1.1" : "Anh ⇄ Việt · bản web";
   const m = [];
   if(!AND){
     if(!WEBSR) m.push("Trình duyệt này <b>không nhận dạng được giọng nói</b>. Dùng <b>Chrome</b> hoặc cài bản ứng dụng (.apk).");
@@ -578,8 +811,8 @@ renderH();
   count();
 })();
 
-/* Android gọi khi bấm nút Back của điện thoại */
 window.__back = () => {
+  if($("sheet").classList.contains("on")){ $("sheet").classList.remove("on"); return true; }
   const cur = document.querySelector("nav button.on");
   if(cur && cur.dataset.tab !== "t1"){
     document.querySelector('nav button[data-tab="t1"]').click();
